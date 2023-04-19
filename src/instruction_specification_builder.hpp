@@ -47,8 +47,6 @@ struct SingleInstructionSpecification {
 
 
 std::vector<std::string> split_string_by_delimiter_and_remove_any_whitespaces(std::string data, char delimiter);
+void parse_mnemonic_and_debug_name(SingleInstructionSpecification& specification, std::string line);
 InstructionField parse_instruction_field(std::string data);
 std::vector<SingleInstructionSpecification> parse_instruction_specification(std::string& input_data);
-std::string read_entire_file(const std::string& filename);
-
-

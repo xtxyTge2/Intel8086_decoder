@@ -1,8 +1,27 @@
 #include "instruction_printer.hpp"
+
 #include <cassert> 
 
 
-std::string to_string(InstructionFieldTypes type) {
+std::string to_string(const Instruction& instruction) {
+	return "[Instruction | address: " + std::to_string(instruction.address) + ", mnemonic: " + instruction.mnemonic + ", source: " + instruction.source.repr + ", destination: " + instruction.destination.repr + ", is_wide: " + std::to_string(instruction.is_wide) + "]";
+}
+
+std::string to_string(const InstructionField& field) {
+	return "<field | field.type: " + to_string(field.type) + ", field.length_in_bits: " + std::to_string(field.length_in_bits) + ", field.binary_string: " + std::to_string(field.binary_string) +
+		", field.value: " + std::to_string(field.value) + ">";
+}
+
+std::string to_string(const SingleInstructionSpecification& spec) {
+	std::string repr = "mnemonic: " + spec.mnemonic + "\ndebug_name: " 
+		+ spec.debug_name + "\n";
+	for (const InstructionField& field: spec.instruction_fields) {
+		repr += to_string(field) + "\n";
+	}
+	return repr;
+}
+
+std::string to_string(const InstructionFieldTypes type) {
 	std::string repr = "";
 	switch (type) {
 		case UNKNOWN:
@@ -69,19 +88,5 @@ std::string to_string(InstructionFieldTypes type) {
 			break;
 	}
 
-	return repr;
-}
-
-std::string to_string(InstructionField& field) {
-	return "<field | field.type: " + to_string(field.type) + ", field.length_in_bits: " + std::to_string(field.length_in_bits) + ", field.binary_string: " + std::to_string(field.binary_string) +
-		", field.value: " + std::to_string(field.value) + ">";
-}
-
-std::string to_string(SingleInstructionSpecification& spec) {
-	std::string repr = "mnemonic: " + spec.mnemonic + "\ndebug_name: " 
-		+ spec.debug_name + "\n";
-	for (InstructionField& field: spec.instruction_fields) {
-		repr += to_string(field) + "\n";
-	}
 	return repr;
 }

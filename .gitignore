@@ -33,3 +33,4 @@
 
 /build
 *.10x
+/tests
