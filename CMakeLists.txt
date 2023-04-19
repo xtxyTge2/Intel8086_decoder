@@ -11,3 +11,10 @@ add_executable(
   "src/instruction_specification_builder.cpp"
   "src/instruction_printer.cpp"
 )
+
+
+add_custom_command(
+  TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory 
+    ${CMAKE_CURRENT_SOURCE_DIR}/instructions_specification
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/instructions_specification)

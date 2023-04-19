@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[])
 {
-	const std::string filename = "C:/Users/kala/code/decoder/instruction_specification_table.txt";
+	const std::string filename = "instructions_specification/instruction_specification_table.txt";
 	std::string file_contents = read_entire_file(filename);
 
 	std::vector<SingleInstructionSpecification> instruction_specifcation = parse_instruction_specification(file_contents);
