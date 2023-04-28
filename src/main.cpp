@@ -40,5 +40,6 @@ int main(int argc, char *argv[])
 		std::cout << "Decoded instruction: " << to_string(instruction) << "\n";
 	}
 
+
 	return 0;
 }

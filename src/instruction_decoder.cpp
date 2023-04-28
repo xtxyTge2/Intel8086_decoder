@@ -130,18 +130,9 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 		// just check if we have some corrupted instruction specifications
 		assert(!(field.type == InstructionFieldTypes::UNKNOWN || field.type == InstructionFieldTypes::COUNT));
 
-		// read the data for the current field from the current byte.
-		
-		//std::cout << "current_byte: " << char_to_binary_string(current_byte) << "\n";
-		//std::cout << "current_spec.field: " << to_string(field) << "\n";
-
-		if (field.type == InstructionFieldTypes::LITERAL) {
-			//std::cout << "literal, needs to read: " << char_to_binary_string(field.value) << "\n";
-		}
+		// extract the data for the current field from the current byte.
 		uint8_t extracted_field_bits = read_bits_in_highest_to_lowest_order_from_byte(current_byte, position_in_current_byte_in_bits, how_many_bits_to_read);
-		
-		//std::cout << "extracted_bits: " << char_to_binary_string(extracted_field_bits) << "\nposition_in_current_byte: " << position_in_current_byte_in_bits << "\nhow_many_bits_to_read: " << how_many_bits_to_read << "\n";
-		//std::cout << "########################################################################\n";
+
 		// advance our read position in the current byte
 		position_in_current_byte_in_bits += how_many_bits_to_read; 
 		assert(position_in_current_byte_in_bits <= 8);
@@ -155,8 +146,11 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 			}
 		}
 
+		// assert that we only set a field, that is not a literal if we havent already set it before.
+		assert(field.type == InstructionFieldTypes::LITERAL || info.already_set_fields_array[field.type] == false);
+
 		info.fields_data[field.type] = extracted_field_bits;
-		
+		info.already_set_fields_array[field.type] = true;
 
 		if (position_in_current_byte_in_bits == 8) { 
 			info.offset_in_bytes++;
@@ -168,7 +162,7 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 				continue;
 			}
 			// can read the next byte
-			current_position++; // advance position BEFORE reading next byte.
+			current_position++; // advance position BEFORE reading the next byte.
 			current_byte = data[current_position];
 			position_in_current_byte_in_bits = 0; // reset current bit position to 0
 			info.raw_data.push_back(current_byte);
@@ -226,11 +220,100 @@ Instruction decode_next_instruction_and_update_context(DecodingContext& decoding
 	return instruction;
 }
 
-Instruction convert_info_to_instruction(InstructionInfo info) {
+
+std::string get_register_name_from_reg_field(const InstructionInfo& info) {
+	std::string register_name = "UNKNOWN_REGISTER_NAME";
+
+	assert(info.already_set_fields_array[InstructionFieldTypes::REG]);
+	assert(info.already_set_fields_array[InstructionFieldTypes::W_BIT]);
+
+	uint8_t reg_field_value = info.fields_data[InstructionFieldTypes::REG];
+	uint8_t w_field_value = info.fields_data[InstructionFieldTypes::W_BIT];
+
+	assert(w_field_value == 0 || w_field_value == 1); // the w-field should only ever have these values.
+	if (w_field_value == 0) {
+		switch (reg_field_value) {
+			case 0b000:
+				register_name = "AL";
+				break;
+			case 0b001:
+				register_name = "CL";
+				break;
+			case 0b010:
+				register_name = "DL";
+				break;
+			case 0b011:
+				register_name = "BL";
+				break;
+			case 0b100:
+				register_name = "AH";
+				break;
+			case 0b101:
+				register_name = "CH";
+				break;
+			case 0b110:
+				register_name = "DH";
+				break;
+			case 0b111:
+				register_name = "BH";
+				break;
+			default:
+				// The reg field should never have any other value, except those above.
+				assert(false);
+				break;
+		}
+	} else {
+		switch (reg_field_value) {
+			case 0b000:
+				register_name = "AX";
+				break;
+			case 0b001:
+				register_name = "CX";
+				break;
+			case 0b010:
+				register_name = "DX";
+				break;
+			case 0b011:
+				register_name = "BX";
+				break;
+			case 0b100:
+				register_name = "SP";
+				break;
+			case 0b101:
+				register_name = "BP";
+				break;
+			case 0b110:
+				register_name = "SI";
+				break;
+			case 0b111:
+				register_name = "DI";
+				break;
+			default:
+				// The reg field should never have any other value, except those above.
+				assert(false);
+				break;
+		}
+	}
+	return register_name;
+}
+
+Instruction convert_info_to_instruction(const InstructionInfo& info) {
+	assert(info.is_valid);
+
 	Instruction instruction = {};
+	instruction.address = info.address;
+
+	std::string src_operand_register_name = get_register_name_from_reg_field(info);
+	instruction.source_operand.repr = src_operand_register_name;
+
+
+
 
 	return instruction;
 }
+
+
+
 
 // reads bits from position, position + 1, position + 2, ..., position + number_of_bits_to_read - 1
 // reads highest to lowest bit order, ie position = 0 means start at highest bit of the given byte.

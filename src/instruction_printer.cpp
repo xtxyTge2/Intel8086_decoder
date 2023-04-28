@@ -4,7 +4,7 @@
 
 
 std::string to_string(const Instruction& instruction) {
-	return "[Instruction | address: " + std::to_string(instruction.address) + ", mnemonic: " + instruction.mnemonic + ", source: " + instruction.source.repr + ", destination: " + instruction.destination.repr + ", is_wide: " + std::to_string(instruction.is_wide) + "]";
+	return "[Instruction | address: " + std::to_string(instruction.address) + ", mnemonic: " + instruction.mnemonic + ", source: " + instruction.source_operand.repr + ", destination: " + instruction.destination_operand.repr + ", is_wide: " + std::to_string(instruction.is_wide) + "]";
 }
 
 std::string to_string(const InstructionField& field) {
