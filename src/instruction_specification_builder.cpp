@@ -21,6 +21,9 @@ std::vector < SingleInstructionSpecification > parse_instruction_specification(s
 
 	bool is_parsing_instruction = false;
 	for (std::string line; std::getline(data, line);) {
+		if (line.size() == 0) {
+			continue;
+		}
 		if (line.at(0) == INSTRUCTION_START_STRING) {
 			assert(!is_parsing_instruction);
 			// can only start an instruction if we are not already inside one
