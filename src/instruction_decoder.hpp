@@ -51,3 +51,5 @@ uint8_t assert_field_has_been_set_and_get_value(const InstructionInfo& info, Ins
 
 uint8_t read_bits_in_highest_to_lowest_order_from_byte(uint8_t byte, uint8_t position, uint8_t number_of_bits_to_read);
 
+bool is_implicit_field_and_can_be_skipped(const InstructionInfo& info);
+

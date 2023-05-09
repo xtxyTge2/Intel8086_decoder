@@ -53,18 +53,10 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 	std::cout << "Try to match stream to instruction specification.\n"; 
 	std::cout << "spec.debug_name: " << instruction_spec.debug_name << "\n";
 
-	bool has_read_the_mod_field = false; // sanity check variable, can be removed in a cleanup. Is there to make sure we have set the mod field before accessing it to determine any possible displacement that might occur.
-	bool has_read_the_w_field = false;
-	bool has_read_the_rm_field = false;
 	bool reached_end_of_stream_before = false;
 
 	int displacement_length = 0; // in bytes
 	for (const InstructionField& field: instruction_spec.instruction_fields) {
-		// @Cleanup: sanity checks, will get removed
-		has_read_the_mod_field |= (field.type == InstructionFieldTypes::MOD);
-		has_read_the_w_field |= (field.type == InstructionFieldTypes::W_BIT);
-		has_read_the_rm_field |= (field.type == InstructionFieldTypes::RM);
-
 		// @Cleanup: factor this out into a method:
 		// auto flags = set_flags_from_implicit_fields(field, info);
 		// where we set flags depending on the fields, for example if we get to the 
@@ -73,7 +65,7 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 		// if its wide or not etc, same for the DATA_IF_W field based on the W_BIT field.
 		// Below we can then handle these implicit fields based on the set flags and only
 		// put data into the fields if the flag is set. For now we do it kinda messy here.
-		if (has_read_the_mod_field && has_read_the_rm_field) {
+		if (info.already_set_fields_array[InstructionFieldTypes::MOD] && info.already_set_fields_array[InstructionFieldTypes::RM]) {
 			uint8_t mod_field_value = info.fields_data[InstructionFieldTypes::MOD];
 			uint8_t rm_field_value = info.fields_data[InstructionFieldTypes::RM];
 			switch (static_cast<int>(mod_field_value)) {
@@ -102,6 +94,7 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 		// In the Intel 8086 specification, the displacement fields are implicit,
 		// that means their existence depends on the MOD and RM field. 
 		assert(displacement_length >= 0 && displacement_length <= 2);
+
 		if (field.type == InstructionFieldTypes::DISPLACEMENT_LOW) {
 			if (displacement_length == 0) {
 				continue;
