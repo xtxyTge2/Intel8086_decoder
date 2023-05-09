@@ -14,7 +14,7 @@ add_executable(
   "src/io_utils.cpp"
 )
 
-
+target_compile_options(${PROJECT_NAME} PRIVATE -W4 -WX)
 
 
 
@@ -53,7 +53,7 @@ add_executable(
   "src/instruction_decoder.cpp"
   "src/io_utils.cpp"
 
-  "src/instruction_info_test.cpp"
+  "src/instruction_specification_builder_test.cpp"
 )
 
 target_link_libraries(
