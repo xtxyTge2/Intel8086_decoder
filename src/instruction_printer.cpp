@@ -90,3 +90,14 @@ std::string to_string(const InstructionFieldTypes type) {
 
 	return repr;
 }
+
+
+
+std::string to_raw_byte_stream_as_string(const std::vector<int>& values) {
+	std::string result;
+	
+	for (auto v: values) {
+		result += std::to_string(static_cast<uint8_t>(v));
+	}
+	return result;
+}
