@@ -6,12 +6,13 @@
 #include <fstream>
 #include <algorithm>
 #include <iostream>
+#include <utility>
 
 #include "instruction_specification_builder.hpp"
 
 std::vector < SingleInstructionSpecification > parse_instruction_specification(std::string& input_data) {
-	const std::string INSTRUCTION_START_STRING = "[";
-	const std::string INSTRUCTION_END_STRING = "]";
+	const char INSTRUCTION_START_STRING = '[';
+	const char INSTRUCTION_END_STRING = ']';
 
 	std::stringstream data(input_data);
 	
@@ -20,7 +21,7 @@ std::vector < SingleInstructionSpecification > parse_instruction_specification(s
 
 	bool is_parsing_instruction = false;
 	for (std::string line; std::getline(data, line);) {
-		if (line.starts_with(INSTRUCTION_START_STRING)) {
+		if (line.at(0) == INSTRUCTION_START_STRING) {
 			assert(!is_parsing_instruction);
 			// can only start an instruction if we are not already inside one
 			is_parsing_instruction = true;
@@ -30,12 +31,12 @@ std::vector < SingleInstructionSpecification > parse_instruction_specification(s
 
 			// parse the mnemonic and debug_name, for this we remove the INSTRUCTION_START string from 
 			// the current line and then try to parse the mnemonic and debug name.
-			std::string rest_of_line = line.substr(INSTRUCTION_END_STRING.size(), line.size());
+			std::string rest_of_line = line.substr(1, line.size());
 			parse_mnemonic_and_debug_name(current_instruction_specification, rest_of_line);
 			continue;
 		}
 
-		if (line.starts_with(INSTRUCTION_END_STRING)) {
+		if (line.at(0) == INSTRUCTION_END_STRING) {
 			assert(is_parsing_instruction);
 			// can only end an instruction if we are inside one
 			is_parsing_instruction = false;

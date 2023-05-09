@@ -4,6 +4,7 @@
 #include "instruction_printer.hpp"
 #include <cassert>
 #include <iostream>
+#include <utility>
 
 
 InstructionInfo fill_out_next_instruction_info(DecodingContext& decoding_context) {
