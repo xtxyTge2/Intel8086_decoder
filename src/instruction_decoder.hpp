@@ -25,7 +25,7 @@ struct Operand {
 
 
 struct Instruction {
-	int address;
+	uint32_t address;
 	std::string mnemonic;
 	Operand source_operand;
 	Operand destination_operand;
@@ -35,7 +35,7 @@ struct Instruction {
 
 
 struct DecodingContext {
-	int address;
+	uint32_t address;
 	std::vector<uint8_t> data;
 	std::vector<SingleInstructionSpecification> specification;
 };

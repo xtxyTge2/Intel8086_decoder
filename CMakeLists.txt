@@ -14,8 +14,11 @@ add_executable(
   "src/io_utils.cpp"
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE -W4 -WX)
-
+target_compile_options(${PROJECT_NAME} PRIVATE
+     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
+          -Werror -pedantic-errors -Wall -Wextra -Wconversion -Wsign-conversion>
+     $<$<CXX_COMPILER_ID:MSVC>:
+          /W4 /WX>)
 
 
 add_custom_command(

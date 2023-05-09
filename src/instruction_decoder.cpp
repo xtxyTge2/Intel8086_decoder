@@ -47,7 +47,7 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 	uint8_t current_byte = data[current_position];
 	info.raw_data.push_back(current_byte);
 	// always start at the first bit in the current byte, there is no straddling between bytes (remember that its from highest to lowest bit, that is bit 8 (highest) is at position_in_current_byte_in_bits equal to 0).
-	int position_in_current_byte_in_bits = 0;
+	uint8_t position_in_current_byte_in_bits = 0;
 
 	std::cout << "Try to match stream to instruction specification.\n"; 
 	std::cout << "spec.debug_name: " << instruction_spec.debug_name << "\n";
@@ -125,7 +125,7 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 		}
 
 
-		unsigned int how_many_bits_to_read = field.length_in_bits;
+		uint8_t how_many_bits_to_read = field.length_in_bits;
 
 		// just check if we have some corrupted instruction specifications
 		assert(!(field.type == InstructionFieldTypes::UNKNOWN || field.type == InstructionFieldTypes::COUNT));
@@ -175,7 +175,7 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 	std::cout << "####################################################\n";
 	std::cout << "Matched byte stream to instruction specification.\n";
 	std::cout << "The byte stream was:\n";
-	for (int i = 0; i < info.offset_in_bytes; i++) {
+	for (uint32_t i = 0; i < info.offset_in_bytes; i++) {
 		std::cout << char_to_binary_string(decoding_context.data[decoding_context.address + i]) << " ";
 	}
 	std::cout << "\n";
@@ -191,8 +191,6 @@ std::vector<Instruction> decode_instruction_stream(DecodingContext& decoding_con
 	std::vector<Instruction> decoded_instructions = {};
 	decoded_instructions.reserve(decoding_context.data.size());
 
-
-	uint32_t address_before = decoding_context.address;
 	while(decoding_context.address < decoding_context.data.size()) {
 		Instruction current_instruction = decode_next_instruction_and_update_context(decoding_context);
 
@@ -416,8 +414,10 @@ std::string determine_effective_address(const InstructionInfo& info) {
 // reads bits from position, position + 1, position + 2, ..., position + number_of_bits_to_read - 1
 // reads highest to lowest bit order, ie position = 0 means start at highest bit of the given byte.
 uint8_t read_bits_in_highest_to_lowest_order_from_byte(uint8_t byte, uint8_t position, uint8_t number_of_bits_to_read) {
+	// @TODO: Cleanup this function.
+
 	assert(position <= 7);
-	assert(position + number_of_bits_to_read <= 8);
+	assert(number_of_bits_to_read <= 8);
 
 	uint8_t mask = 0x00;
 
@@ -426,14 +426,19 @@ uint8_t read_bits_in_highest_to_lowest_order_from_byte(uint8_t byte, uint8_t pos
 		mask = (mask << 1) | 1;
 	}
 
-	int8_t num_bits_to_shift_left = 8 - static_cast<int8_t>(position) - static_cast<int8_t>(number_of_bits_to_read);
+	assert(position + number_of_bits_to_read <= 8);
+	uint8_t v = position + number_of_bits_to_read; 
+	assert(std::in_range < int8_t > (v));
+	int8_t num_bits_to_shift_left = 8 - static_cast<int8_t>(v);
+
+	//uint8_t num_bits_to_shift_left = 8 - position - number_of_bits_to_read;
 	mask = (mask << num_bits_to_shift_left);
 	//std::cout << "mask: " << char_to_binary_string(mask) << "\n"; //nocheckin
 
 	uint8_t extracted_bits = byte & mask;
 
-	int8_t end_position = position + number_of_bits_to_read;
-	int8_t down_shift_value = 8 - end_position;
+	uint8_t end_position = position + number_of_bits_to_read;
+	uint8_t down_shift_value = 8 - end_position;
 
 	return extracted_bits >> down_shift_value;
 }

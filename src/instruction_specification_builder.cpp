@@ -87,7 +87,12 @@ InstructionField parse_instruction_field(std::string data) {
 	if (split_data[0] == "LITERAL") {
 		field.type = InstructionFieldTypes::LITERAL;
 		assert(split_data.size() == 3);
-		field.length_in_bits = std::stoi(split_data[1]);
+		
+
+		int length_in_bits_raw_value = std::stoi(split_data[1]);
+		assert(std::in_range < uint8_t > (length_in_bits_raw_value)); 
+		field.length_in_bits = static_cast<uint8_t>(length_in_bits_raw_value);
+
 		field.binary_string = std::stoi(split_data[2]);
 		field.value = std::stoi(split_data[2], nullptr, 2);
 	}
@@ -152,9 +157,9 @@ InstructionField parse_instruction_field(std::string data) {
 	}
 	
 	// @Cleanup: Replace this with a compile time built lookup table. For now this is fine. 
-	std::array < int, InstructionFieldTypes::COUNT > instruction_field_length_lookup_table = {};
-	instruction_field_length_lookup_table[UNKNOWN] = -1; // dummy value, should never be accessed.
-	instruction_field_length_lookup_table[LITERAL] = -1; // dummy value, should never be accessed.
+	std::array < uint8_t, InstructionFieldTypes::COUNT > instruction_field_length_lookup_table = {};
+	instruction_field_length_lookup_table[UNKNOWN] = 0; // dummy value, should never be accessed.
+	instruction_field_length_lookup_table[LITERAL] = 0; // dummy value, should never be accessed.
 	instruction_field_length_lookup_table[MOD] = 2;
 	instruction_field_length_lookup_table[REG] = 3;
 	instruction_field_length_lookup_table[RM] = 3;

@@ -31,7 +31,7 @@ enum InstructionFieldTypes {
 
 struct InstructionField {
 	InstructionFieldTypes type;
-	int length_in_bits;
+	uint8_t length_in_bits;
 	int binary_string;
 	int value; // either a binary literal, if field_type is InstructionFieldTypes::LITERAL, or its a count value, specifying the size of the field in bits. 
 };

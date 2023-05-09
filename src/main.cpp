@@ -17,7 +17,7 @@ int main()
 	std::string file_contents = read_entire_file(input_filename);	 
 	std::cout << "filename: " << input_filename << "\n";
 	for (char v: file_contents) {
-		std::cout << char_to_binary_string(v) << " ";
+		std::cout << char_to_binary_string(static_cast<unsigned char>(v)) << " ";
 	}
 	std::cout << "\n\n";
 
