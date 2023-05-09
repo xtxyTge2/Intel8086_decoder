@@ -9,7 +9,7 @@
 InstructionInfo fill_out_next_instruction_info(DecodingContext& decoding_context) {
 	InstructionInfo info = {};
 
-	const std::string& data = decoding_context.data;
+	std::vector<uint8_t> data = decoding_context.data;
 	if (decoding_context.address >= data.size()) {
 		info.is_valid = false;
 		return info;
@@ -41,7 +41,7 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 	InstructionInfo info = {};
 	info.address = decoding_context.address;
 
-	const std::string& data = decoding_context.data;
+	std::vector<uint8_t> data = decoding_context.data;
 	unsigned int current_position = decoding_context.address; // position in bytes in the raw data stream.
 
 	uint8_t current_byte = data[current_position];
@@ -176,8 +176,7 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 	std::cout << "Matched byte stream to instruction specification.\n";
 	std::cout << "The byte stream was:\n";
 	for (int i = 0; i < info.offset_in_bytes; i++) {
-		std::cout << char_to_binary_string(decoding_context.data[decoding_context.address 
-		                                   + i]) << " ";
+		std::cout << char_to_binary_string(decoding_context.data[decoding_context.address + i]) << " ";
 	}
 	std::cout << "\n";
 	std::cout << "The matching specification was:\n";
@@ -221,18 +220,10 @@ Instruction decode_next_instruction_and_update_context(DecodingContext& decoding
 }
 
 
-std::string get_register_name_from_reg_field(const InstructionInfo& info) {
+std::string lookup_register_name(bool is_wide, uint8_t lookup_value) {
 	std::string register_name = "UNKNOWN_REGISTER_NAME";
-
-	assert(info.already_set_fields_array[InstructionFieldTypes::REG]);
-	assert(info.already_set_fields_array[InstructionFieldTypes::W_BIT]);
-
-	uint8_t reg_field_value = info.fields_data[InstructionFieldTypes::REG];
-	uint8_t w_field_value = info.fields_data[InstructionFieldTypes::W_BIT];
-
-	assert(w_field_value == 0 || w_field_value == 1); // the w-field should only ever have these values.
-	if (w_field_value == 0) {
-		switch (reg_field_value) {
+	if (!is_wide) {
+		switch (lookup_value) {
 			case 0b000:
 				register_name = "AL";
 				break;
@@ -258,12 +249,12 @@ std::string get_register_name_from_reg_field(const InstructionInfo& info) {
 				register_name = "BH";
 				break;
 			default:
-				// The reg field should never have any other value, except those above.
+				// The lookup_value should never have any other value, except those above.
 				assert(false);
 				break;
 		}
 	} else {
-		switch (reg_field_value) {
+		switch (lookup_value) {
 			case 0b000:
 				register_name = "AX";
 				break;
@@ -289,7 +280,7 @@ std::string get_register_name_from_reg_field(const InstructionInfo& info) {
 				register_name = "DI";
 				break;
 			default:
-				// The reg field should never have any other value, except those above.
+				// The lookup_value should never have any other value, except those above.
 				assert(false);
 				break;
 		}
@@ -297,21 +288,128 @@ std::string get_register_name_from_reg_field(const InstructionInfo& info) {
 	return register_name;
 }
 
+uint8_t assert_field_has_been_set_and_get_value(const InstructionInfo& info, InstructionFieldTypes field_type) {
+	assert(info.already_set_fields_array[field_type]);
+
+	return info.fields_data[field_type];
+}
+
+
 Instruction convert_info_to_instruction(const InstructionInfo& info) {
 	assert(info.is_valid);
 
 	Instruction instruction = {};
 	instruction.address = info.address;
 
-	std::string src_operand_register_name = get_register_name_from_reg_field(info);
+	if (info.already_set_fields_array[InstructionFieldTypes::W_BIT]) {
+		// W_BIT field has been set.
+		instruction.is_wide = info.fields_data[InstructionFieldTypes::W_BIT] == 1;
+	}
+
+	std::string src_operand_register_name = lookup_register_name(instruction.is_wide, info.fields_data[InstructionFieldTypes::REG]);
 	instruction.source_operand.repr = src_operand_register_name;
-
-
-
 
 	return instruction;
 }
 
+
+std::string determine_effective_address(const InstructionInfo& info) {
+	std::string result = "";
+
+	uint8_t mod_field_value = assert_field_has_been_set_and_get_value(info, InstructionFieldTypes::MOD);
+	uint8_t rm_field_value = assert_field_has_been_set_and_get_value(info, InstructionFieldTypes::RM);
+	bool is_direct_addressing_mode = (mod_field_value == 0b00) && (rm_field_value == 0b110);
+
+	if (mod_field_value == 0b11) {
+		// Register mode.
+		uint8_t w_field_value = assert_field_has_been_set_and_get_value(info, InstructionFieldTypes::W_BIT);
+		bool is_wide = w_field_value == 1;
+			
+		// use the rm_field value to lookup the register name for the effective address calculation.
+		result = lookup_register_name(rm_field_value, is_wide);
+	} else {
+		// Memory mode.
+		switch (rm_field_value) {
+			case 0b000:
+				result = "[BX + SI";
+				break;
+			case 0b001:
+				result = "[BX + DI";
+				break;
+			case 0b010:
+				result = "[BP + SI";
+				break;
+			case 0b011:
+				result = "[BP + DI";
+				break;
+			case 0b100:
+				result = "[SI";
+				break;
+			case 0b101:
+				result = "[DI";
+				break;
+			case 0b110:
+				if (is_direct_addressing_mode) {
+					result = "[";
+				} else {
+					result = "[BP";
+				}
+				break;
+			case 0b111:
+				result = "[BX";
+				break;
+			default:
+				// invalid rm_field value.
+				assert(false);
+				break;
+		}
+
+		int displacement_length = 0; // number of displacement bytes, either 0, 1 or 2, corresponding to no DISPLACEMENT_LOW and DISPLACEMENT_HIGH field, or just the DISPLACEMENT_LOW field, or both fields, respectively.
+
+		switch (mod_field_value) {
+			case 0b00:
+				if (is_direct_addressing_mode) {
+					displacement_length = 2;
+				} else {
+					displacement_length = 0;
+				}
+				break;
+			case 0b01:
+				displacement_length = 1;
+				break;
+			case 0b10:
+				displacement_length = 2;
+				break;
+			case 0b11:
+				// cant happen, is handled above.
+				assert(false);
+				break;
+			default:
+				// Invalid mod_field_value.
+				assert(false);
+				break;
+		}
+
+
+		uint16_t displacement_value = 0;
+		if (displacement_length == 1) {
+			displacement_value = assert_field_has_been_set_and_get_value(info, InstructionFieldTypes::DISPLACEMENT_LOW); // @Fixme. these are unsigned types? no sign extension here, but we want one?
+		} else if (displacement_length == 2) {
+			uint8_t displacement_low_value = assert_field_has_been_set_and_get_value(info, InstructionFieldTypes::DISPLACEMENT_LOW);
+			uint8_t displacement_high_value = assert_field_has_been_set_and_get_value(info, InstructionFieldTypes::DISPLACEMENT_HIGH);
+
+			displacement_value = (displacement_high_value << 8) | displacement_low_value;
+		}
+
+		if (displacement_length > 0) {
+			result += " " + std::to_string(displacement_value);
+		}
+		result += "]";
+
+	}
+
+	return result; 
+}
 
 
 

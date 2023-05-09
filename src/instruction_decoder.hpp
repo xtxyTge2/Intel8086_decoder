@@ -36,7 +36,7 @@ struct Instruction {
 
 struct DecodingContext {
 	int address;
-	std::string data;
+	std::vector<uint8_t> data;
 	std::vector<SingleInstructionSpecification> specification;
 };
 
@@ -46,7 +46,8 @@ InstructionInfo try_to_find_matching_instruction_specification(DecodingContext& 
 std::vector<Instruction> decode_instruction_stream(DecodingContext& decoding_context);
 Instruction decode_next_instruction_and_update_context(DecodingContext& decoding_context);
 Instruction convert_info_to_instruction(const InstructionInfo& info);
-std::string get_register_name_from_reg_field(const InstructionInfo& info);
+std::string lookup_register_name(bool is_wide, uint8_t lookup_value);
+uint8_t assert_field_has_been_set_and_get_value(const InstructionInfo& info, InstructionFieldTypes field_type);
 
 uint8_t read_bits_in_highest_to_lowest_order_from_byte(uint8_t byte, uint8_t position, uint8_t number_of_bits_to_read);
 
