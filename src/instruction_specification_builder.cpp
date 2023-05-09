@@ -10,8 +10,8 @@
 #include "instruction_specification_builder.hpp"
 
 std::vector < SingleInstructionSpecification > parse_instruction_specification(std::string& input_data) {
-	const std::string INSTRUCTION_START_STRING = "<";
-	const std::string INSTRUCTION_END_STRING = ">";
+	const std::string INSTRUCTION_START_STRING = "[";
+	const std::string INSTRUCTION_END_STRING = "]";
 
 	std::stringstream data(input_data);
 	

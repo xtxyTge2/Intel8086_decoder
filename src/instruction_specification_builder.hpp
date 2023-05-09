@@ -4,7 +4,6 @@
 #include <vector>
 
 
-
 enum InstructionFieldTypes {
 	UNKNOWN,
 	LITERAL,
